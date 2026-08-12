@@ -1,4 +1,4 @@
-# koi pond
+# sensory experiences
 
 Two interactive pieces, scroll-snapped one per screen, presented alike: each
 sits on the same stage — a rounded rect at 65% of the viewport dissolving into
@@ -15,6 +15,18 @@ warm paper — with its title bottom-left and its instruction bottom-right.
 npm install
 npm run dev
 ```
+
+## deploying
+
+Pushing to `main` builds and publishes to GitHub Pages via
+`.github/workflows/deploy.yml`. Set **Settings → Pages → Source** to
+*GitHub Actions* once, and it's automatic after that.
+
+Vite's `base` is `'./'`, so the built site works at any path — a project page
+under `/<repo>/`, a user page at `/`, or a custom domain — without the repo name
+being written into anything. Files in `public/` are resolved through `asset()`
+in `stage.js` for the same reason; a bare `/assets/…` would 404 on a project
+page.
 
 ## how the page is put together
 
