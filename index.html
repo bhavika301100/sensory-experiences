@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>sensory experiences</title>
+  </head>
+  <body>
+    <div id="grain" aria-hidden="true"></div>
+
+    <button id="sound" type="button" data-tip="sound on" aria-label="sound on" aria-pressed="true">
+      <svg class="icon-on" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M11 22H9V20H7V18H9V6H7V4H9V2H11V22ZM19 22H13V20H19V22ZM21 20H19V18H21V20ZM7 18H5V16H7V18ZM17 18H13V16H17V18ZM23 18H21V6H23V18ZM5 10H3V14H5V16H1V8H5V10ZM19 16H17V8H19V16ZM15 14H13V10H15V14ZM7 8H5V6H7V8ZM17 8H13V6H17V8ZM21 6H19V4H21V6ZM19 4H13V2H19V4Z" fill="currentColor"/>
+      </svg>
+      <svg class="icon-off" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="2" y="1" width="2" height="2" fill="currentColor"/>
+        <rect x="4" y="3" width="2" height="2" fill="currentColor"/>
+        <rect x="6" y="5" width="2" height="2" fill="currentColor"/>
+        <rect x="8" y="7" width="2" height="2" fill="currentColor"/>
+        <rect x="10" y="9" width="2" height="2" fill="currentColor"/>
+        <rect x="12" y="11" width="2" height="2" fill="currentColor"/>
+        <rect x="14" y="13" width="2" height="2" fill="currentColor"/>
+        <rect x="16" y="15" width="2" height="2" fill="currentColor"/>
+        <rect x="18" y="17" width="2" height="2" fill="currentColor"/>
+        <rect x="20" y="19" width="2" height="2" fill="currentColor"/>
+        <path d="M17 22H15V20H13V18H15V6H13V4H15V2H17V22ZM13 18H11V16H13V18ZM11 8V10H9V14H11V16H7V8H11ZM13 8H11V6H13V8Z" fill="currentColor"/>
+      </svg>
+    </button>
+
+    <main>
+      <section class="piece" data-scene="pond">
+        <div class="stage">
+          <canvas class="layer bg"></canvas>
+          <canvas class="layer fg"></canvas>
+        </div>
+        <div class="caption">
+          <p class="title">koi fish pond</p>
+          <button class="feed" type="button">feed</button>
+          <p class="hint">tap the water</p>
+        </div>
+      </section>
+
+      <section class="piece" data-scene="halftone">
+        <div class="stage">
+          <!-- src is set in halftone.js so it resolves against the deploy base -->
+          <video class="layer source" muted loop playsinline preload="auto" aria-hidden="true"></video>
+          <canvas class="layer fg"></canvas>
+        </div>
+        <div class="caption">
+          <p class="title">oh, to be young and free</p>
+          <p class="hint">hover and explore</p>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

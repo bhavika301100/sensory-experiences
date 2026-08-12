@@ -1,0 +1,18 @@
+{
+  "name": "koi-pond",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.1.0",
+    "shaders": "^3.0.452"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}

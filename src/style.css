@@ -1,0 +1,255 @@
+@import '@fontsource/jetbrains-mono/300.css';
+@import '@fontsource/jetbrains-mono/400.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* breathing room between a piece and everything around it */
+  --gap: 16px;
+  /* --stage-w, --stage-h and --feather are published by stage.js */
+  --seen: calc(var(--feather, 40px) / 2);
+  --ink: 30, 40, 50;
+}
+
+html {
+  /* one piece at a time */
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+
+body {
+  /* warm paper every piece dissolves into */
+  background: #efeee9;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  text-transform: lowercase;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* one grain field over paper and pieces alike, so it all reads as one surface */
+#grain {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.19;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.piece {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  scroll-snap-align: start;
+}
+
+.stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--stage-w, 65vw);
+  height: var(--stage-h, 65vh);
+  z-index: 1;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+/* the video is drawn to the canvas so it can take the same feathered edge —
+   kept laid out at full size rather than hidden, so decoding keeps up */
+video.source {
+  opacity: 0;
+  object-fit: cover;
+}
+
+.caption {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(var(--stage-w, 65vw) - 2 * var(--seen));
+  top: calc(50% + var(--stage-h, 65vh) / 2 - var(--seen) + var(--gap));
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  /* rows pinned to the top of the band, so the row sits under the piece rather
+     than floating in the middle of the paper */
+  align-content: start;
+  gap: 0.75rem;
+}
+
+.title,
+.hint {
+  font-size: clamp(0.58rem, 1.5vw, 0.72rem);
+  font-weight: 300;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+}
+
+/* dark ink — these sit on paper, not over the artwork */
+.title {
+  grid-column: 1;
+  justify-self: start;
+  color: rgba(var(--ink), 0.82);
+}
+
+.hint {
+  grid-column: 3;
+  justify-self: end;
+  color: rgba(var(--ink), 0.44);
+}
+
+.feed {
+  grid-column: 2;
+  justify-self: center;
+  padding: 0.6rem 1.9rem;
+  font-family: inherit;
+  font-size: clamp(0.62rem, 1.6vw, 0.78rem);
+  font-weight: 300;
+  letter-spacing: 0.18em;
+  text-transform: lowercase;
+  cursor: pointer;
+  color: rgba(22, 30, 38, 0.86);
+  border: 1px solid rgba(var(--ink), 0.22);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.62);
+  transition: border-color 0.35s ease, background 0.35s ease, color 0.35s ease,
+    transform 0.2s ease, opacity 0.35s ease;
+}
+
+.feed:hover:not(:disabled) {
+  color: rgba(14, 22, 30, 0.95);
+  border-color: rgba(var(--ink), 0.44);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.feed:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.feed:disabled {
+  cursor: default;
+  opacity: 0.32;
+}
+
+/* One toggle for the whole page. Fixed, and positioned off the same stage
+   geometry every piece uses — with scroll snapping, whichever piece is on
+   screen puts its stage in exactly this spot. 23px = 16px icon + 7px padding. */
+#sound {
+  position: fixed;
+  top: calc(50% - var(--stage-h, 65vh) / 2 + var(--seen) - var(--gap) - 23px);
+  left: calc(50% + var(--stage-w, 65vw) / 2 - var(--seen) - 23px);
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 7px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: rgba(var(--ink), 0.5);
+  transition: color 0.3s ease;
+}
+
+#sound:hover,
+#sound:focus-visible {
+  color: rgba(20, 28, 36, 0.9);
+}
+
+#sound svg {
+  grid-area: 1 / 1;
+  display: block;
+  width: 16px;
+  height: 16px;
+  /* pixel icons: keep the blocks crisp */
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+}
+
+#sound .icon-off,
+#sound[aria-pressed='false'] .icon-on {
+  display: none;
+}
+
+#sound[aria-pressed='false'] .icon-off {
+  display: block;
+}
+
+/* the piece is directly below, so the tooltip goes above the icon */
+#sound::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% - 2px);
+  right: 7px;
+  padding: 0.35rem 0.55rem;
+  white-space: nowrap;
+  font-size: 0.58rem;
+  font-weight: 300;
+  letter-spacing: 0.16em;
+  color: rgba(var(--ink), 0.78);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(var(--ink), 0.14);
+  border-radius: 3px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+#sound:hover::after,
+#sound:focus-visible::after {
+  opacity: 1;
+}
+
+/* Narrow viewports: there isn't room for label + button + label on one line.
+   A `1fr` track is minmax(auto, 1fr), so the nowrap labels force the side
+   columns wider than their share and shove the button off the stage's axis.
+   Two rows instead — button centred above, labels still pinned to the edges. */
+@media (max-width: 560px) {
+  .caption {
+    grid-template-areas:
+      'feed feed feed'
+      'title . hint';
+    gap: 0.7rem 0.5rem;
+  }
+
+  .feed {
+    grid-area: feed;
+    padding: 0.55rem 1.5rem;
+  }
+
+  .title {
+    grid-area: title;
+  }
+
+  .hint {
+    grid-area: hint;
+  }
+}
+
+/* tighter still: the instruction is the first thing to go */
+@media (max-width: 400px) {
+  .hint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
