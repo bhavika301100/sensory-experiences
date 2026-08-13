@@ -15,9 +15,14 @@ export function rollText(el, next, { duration = DEFAULT_DURATION, stagger = DEFA
   if (!el) return;
   if (el.dataset.rollOriginal === undefined) el.dataset.rollOriginal = el.innerHTML;
 
-  // the title is written across several source lines, so its textContent is
-  // full of indentation — collapse it or the roll animates whitespace
-  const from = el.textContent.replace(/\s+/g, ' ').trim();
+  // Mid-roll the element holds both the outgoing and incoming glyph for every
+  // slot, so textContent would read as interleaved nonsense. Once a roll has
+  // run, its target is the truth. Otherwise fall back to the markup's own text,
+  // collapsed — the title spans several source lines and is full of indentation.
+  const from =
+    el.dataset.rollTarget !== undefined
+      ? el.dataset.rollTarget
+      : el.textContent.replace(/\s+/g, ' ').trim();
   const to = next;
   const len = Math.max(from.length, to.length);
 
@@ -65,9 +70,25 @@ export function rollText(el, next, { duration = DEFAULT_DURATION, stagger = DEFA
   );
 }
 
-/** Put the element back to the markup it had before the first roll. */
-export function restoreText(el) {
-  if (!el || el.dataset.rollOriginal === undefined) return;
-  el.innerHTML = el.dataset.rollOriginal;
-  delete el.dataset.rollTarget;
+/**
+ * Roll back to whatever the element said before the first roll.
+ *
+ * The roll itself can only animate plain text, which would leave the title as a
+ * flat string with its link gone. So it rolls toward the original's *text*, and
+ * swaps the real markup back in once it lands — the link and its arrow return
+ * at the moment the animation finishes, not before.
+ */
+export function rollRestore(el, opts = {}) {
+  if (!el || el.dataset.rollOriginal === undefined) return Promise.resolve();
+
+  const original = el.dataset.rollOriginal;
+  const probe = document.createElement('div');
+  probe.innerHTML = original;
+  const plain = probe.textContent.replace(/\s+/g, ' ').trim();
+
+  return rollText(el, plain, opts).then(() => {
+    if (el.dataset.rollTarget !== plain) return; // a newer roll took over
+    el.innerHTML = original;
+    delete el.dataset.rollTarget;
+  });
 }

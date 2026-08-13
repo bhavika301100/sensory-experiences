@@ -8,7 +8,7 @@
 import { stage, featherMask, asset, coverRect } from './stage.js';
 import { unlock, windGust, windStop, playReveal } from './audio.js';
 import { createFog, CLOUD_TOP } from './fog.js';
-import { rollText, restoreText } from './roll.js';
+import { rollText, rollRestore } from './roll.js';
 
 const TAU = Math.PI * 2;
 
@@ -354,8 +354,9 @@ export function createScratch(section) {
     pressing = false;
     prev = null;
     windStop();
-    restoreText(titleEl);
-    restoreText(hintEl);
+    // rolls back rather than snapping, same pace as the reveal
+    rollRestore(titleEl, { duration: 1400, stagger: 70 });
+    rollRestore(hintEl, { duration: 1400, stagger: 70 });
   }
 
   return {
