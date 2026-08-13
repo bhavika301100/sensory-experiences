@@ -8,13 +8,17 @@ const AMBIENCE_GAIN = 0.05; // the still-water bed, deliberately far back
 const MUSIC_GAIN = 0.5; // the halftone piece's soundtrack
 const DRIP_GAIN = 0.62;
 const SWIM_GAIN = 0.22;
+const REVEAL_GAIN = 0.25; // your reveal clip, at about a third of its original level
+const WIND_GAIN = 0.13; // peak of the gust when sweeping hard
+const WIND_BED_GAIN = 0.011; // the calm wind that's just always there — barely perceptible
 const CROSSFADE = 1.4; // s to hand over between pieces
 const MUTE_KEY = 'koi-pond:muted';
 
 let ctx = null;
 let master = null;
 let ready = null;
-let buffers = { drip: null, swim: null, music: null };
+let buffers = { drip: null, swim: null, music: null, reveal: null };
+let scratch = null; // lazily built noise rig for the scratch piece
 let ambienceStarted = false;
 let muted = false;
 let suspendTimer = 0;
@@ -23,6 +27,7 @@ let suspendTimer = 0;
 let ambienceGain = null;
 let musicGain = null;
 let musicSource = null;
+let windBedGain = null;
 let scene = 'pond';
 
 try {
@@ -121,6 +126,46 @@ function startMusic() {
   applyScene();
 }
 
+/**
+ * The fog piece's bed: calm, constant wind, sitting under everything the whole
+ * time you're on the piece. The gust from scratching rides on top of this —
+ * this one never reacts to anything, it's just the air being there.
+ */
+function startWindBed() {
+  if (windBedGain || !ctx || muted) return;
+
+  const src = ctx.createBufferSource();
+  src.buffer = whiteNoiseBuffer();
+  src.loop = true;
+
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 440;
+  lp.Q.value = 0.7;
+
+  // the cutoff wanders so it breathes, but the level never moves — an
+  // amplitude swell would be heard as the wind dropping out
+  const drift = ctx.createOscillator();
+  drift.frequency.value = 0.037;
+  const depth = ctx.createGain();
+  depth.gain.value = 170;
+  drift.connect(depth).connect(lp.frequency);
+
+  const hp = ctx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 90;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0;
+
+  src.connect(lp).connect(hp).connect(gain).connect(master);
+  src.start();
+  drift.start();
+
+  windBedGain = gain;
+  applyScene();
+}
+
 /** Hand the bed over to whichever piece is on screen. Only one is ever up. */
 function applyScene() {
   if (!ctx) return;
@@ -137,6 +182,10 @@ function applyScene() {
     musicGain.gain.cancelScheduledValues(t);
     musicGain.gain.setTargetAtTime(scene === 'halftone' ? MUSIC_GAIN : 0, t, tau);
   }
+  if (windBedGain) {
+    windBedGain.gain.cancelScheduledValues(t);
+    windBedGain.gain.setTargetAtTime(scene === 'scratch' ? WIND_BED_GAIN : 0, t, tau);
+  }
 }
 
 export function setScene(next) {
@@ -145,6 +194,7 @@ export function setScene(next) {
   if (!muted) {
     ensureAmbience();
     startMusic();
+    startWindBed();
   }
   applyScene();
 }
@@ -179,8 +229,9 @@ export function prepare() {
     load(asset('assets/drip.mp3')).catch(() => null),
     load(asset('assets/swim.mp3')).catch(() => null),
     load(asset('assets/music.m4a')).catch(() => null),
-  ]).then(([drip, swim, music]) => {
-    buffers = { drip, swim, music };
+    load(asset('assets/reveal.mp3')).catch(() => null),
+  ]).then(([drip, swim, music, reveal]) => {
+    buffers = { drip, swim, music, reveal };
     if (!muted && scene === 'halftone') startMusic();
   });
 
@@ -200,6 +251,7 @@ export async function unlock() {
   if (ctx.state === 'suspended') await ctx.resume();
   ensureAmbience();
   startMusic();
+  startWindBed();
 }
 
 /**
@@ -268,6 +320,97 @@ export function playSwim(x = window.innerWidth / 2, intensity = 1) {
   src.start(now, Math.random() * (buf.duration - dur - 0.05), dur + 0.05);
 }
 
+/** White noise, wrapped the same way as the ambience so the loop is seamless. */
+function whiteNoiseBuffer(seconds = 3) {
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * seconds);
+  const wrap = Math.floor(sr * 0.4);
+
+  const raw = new Float32Array(len + wrap);
+  for (let i = 0; i < raw.length; i++) raw[i] = Math.random() * 2 - 1;
+
+  const buf = ctx.createBuffer(1, len, sr);
+  const ch = buf.getChannelData(0);
+  ch.set(raw.subarray(0, len));
+  for (let i = 0; i < wrap; i++) {
+    const k = i / wrap;
+    ch[i] = raw[i] * Math.sqrt(k) + raw[len + i] * Math.sqrt(1 - k);
+  }
+  return buf;
+}
+
+/**
+ * Wind, for sweeping the cloud off.
+ *
+ * Two layers, because one band of noise sounds like a hairdryer: a low body
+ * that carries the weight of moving air, and a resonant upper band that gives
+ * it the thin edge wind gets around an obstacle. Both open up as the hand
+ * speeds up — louder, brighter, and the top band climbs — so a slow drag is a
+ * breath and a fast sweep is a gust.
+ */
+function ensureWindRig() {
+  if (scratch || !ctx || muted) return scratch;
+
+  const src = ctx.createBufferSource();
+  src.buffer = whiteNoiseBuffer();
+  src.loop = true;
+
+  const body = ctx.createBiquadFilter();
+  body.type = 'lowpass';
+  body.frequency.value = 420;
+  body.Q.value = 0.9;
+  const bodyGain = ctx.createGain();
+  bodyGain.gain.value = 0;
+
+  const edge = ctx.createBiquadFilter();
+  edge.type = 'bandpass';
+  edge.frequency.value = 900;
+  edge.Q.value = 1.6;
+  const edgeGain = ctx.createGain();
+  edgeGain.gain.value = 0;
+
+  src.connect(body).connect(bodyGain).connect(master);
+  src.connect(edge).connect(edgeGain).connect(master);
+  src.start();
+
+  scratch = { body, bodyGain, edge, edgeGain };
+  return scratch;
+}
+
+/** @param {number} speed 0..1, how fast the hand is sweeping. */
+export function windGust(speed) {
+  if (!ctx || muted) return;
+  const rig = ensureWindRig();
+  if (!rig) return;
+
+  const v = Math.max(0, Math.min(1, speed));
+  const now = ctx.currentTime;
+
+  // rises quickly, falls away a little slower — the tail of a gust
+  rig.bodyGain.gain.setTargetAtTime(v * WIND_GAIN, now, 0.07);
+  rig.edgeGain.gain.setTargetAtTime(v * v * WIND_GAIN * 0.55, now, 0.09);
+  rig.body.frequency.setTargetAtTime(360 + v * 900, now, 0.12);
+  rig.edge.frequency.setTargetAtTime(750 + v * 1700, now, 0.12);
+}
+
+export function windStop() {
+  if (!ctx || !scratch) return;
+  const now = ctx.currentTime;
+  scratch.bodyGain.gain.setTargetAtTime(0, now, 0.18);
+  scratch.edgeGain.gain.setTargetAtTime(0, now, 0.14);
+}
+
+/** Your reveal clip, straight — just turned down. */
+export function playReveal() {
+  if (!ctx || muted || !buffers.reveal) return;
+  const src = ctx.createBufferSource();
+  src.buffer = buffers.reveal;
+  const gain = ctx.createGain();
+  gain.gain.value = REVEAL_GAIN;
+  src.connect(gain).connect(master);
+  src.start();
+}
+
 export function isMuted() {
   return muted;
 }
@@ -296,10 +439,12 @@ export function setMuted(next) {
     ctx.resume().then(() => {
       ensureAmbience();
       startMusic();
+      startWindBed();
     });
   } else {
     ensureAmbience();
     startMusic();
+    startWindBed();
   }
 
   return muted;
@@ -315,6 +460,7 @@ export function audioState() {
     masterGain: master ? +master.gain.value.toFixed(4) : null,
     ambienceLevel: ambienceGain ? +ambienceGain.gain.value.toFixed(4) : null,
     musicLevel: musicGain ? +musicGain.gain.value.toFixed(4) : null,
+    windBedLevel: windBedGain ? +windBedGain.gain.value.toFixed(4) : null,
     contextState: ctx?.state ?? null,
     sampleRate: ctx?.sampleRate ?? null,
     dripSeconds: buffers.drip ? +buffers.drip.duration.toFixed(2) : null,

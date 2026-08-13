@@ -12,6 +12,8 @@
   --gap: 16px;
   /* --stage-w, --stage-h and --feather are published by stage.js */
   --seen: calc(var(--feather, 40px) / 2);
+  /* centre-to-centre spacing between the header icons */
+  --icon-step: 28px;
   --ink: 30, 40, 50;
 }
 
@@ -112,6 +114,76 @@ video.source {
   color: rgba(var(--ink), 0.44);
 }
 
+/* karl gets the wavy underline — fog, and a link */
+.karl {
+  color: inherit;
+  text-decoration: underline wavy;
+  text-decoration-color: rgba(var(--ink), 0.45);
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  cursor: pointer;
+  transition: text-decoration-color 0.3s ease, color 0.3s ease;
+}
+
+.karl:hover,
+.karl:focus-visible {
+  color: rgba(12, 20, 28, 1);
+  text-decoration-color: rgba(var(--ink), 0.9);
+}
+
+/* opens in a new tab — kept out of the wavy underline so the arrow stays clean */
+.karl .ext {
+  display: inline-block;
+  text-decoration: none;
+  font-size: 0.85em;
+  margin-left: 0.15em;
+  vertical-align: 0.06em;
+}
+
+/* one character of a rolling line: the outgoing glyph leaves upward while the
+   incoming one rises into its place */
+.roll {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  vertical-align: bottom;
+  white-space: pre;
+}
+
+.roll > span {
+  display: block;
+  transition: transform var(--roll-dur, 900ms) cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity var(--roll-dur, 900ms) ease;
+}
+
+.roll .roll-out {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.roll .roll-in {
+  position: absolute;
+  inset: 0;
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.roll.rolling .roll-out {
+  transform: translateY(-100%);
+  opacity: 0;
+}
+
+.roll.rolling .roll-in {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* the coin, not a text cursor */
+.piece[data-scene='scratch'] .stage {
+  cursor: crosshair;
+  touch-action: none;
+}
+
 .feed {
   grid-column: 2;
   justify-self: center;
@@ -148,7 +220,8 @@ video.source {
 /* One toggle for the whole page. Fixed, and positioned off the same stage
    geometry every piece uses — with scroll snapping, whichever piece is on
    screen puts its stage in exactly this spot. 23px = 16px icon + 7px padding. */
-#sound {
+#sound,
+.replay {
   position: fixed;
   top: calc(50% - var(--stage-h, 65vh) / 2 + var(--seen) - var(--gap) - 23px);
   left: calc(50% + var(--stage-w, 65vw) / 2 - var(--seen) - 23px);
@@ -167,11 +240,14 @@ video.source {
 }
 
 #sound:hover,
-#sound:focus-visible {
+#sound:focus-visible,
+.replay:hover,
+.replay:focus-visible {
   color: rgba(20, 28, 36, 0.9);
 }
 
-#sound svg {
+#sound svg,
+.replay svg {
   grid-area: 1 / 1;
   display: block;
   width: 16px;
@@ -179,6 +255,11 @@ video.source {
   /* pixel icons: keep the blocks crisp */
   image-rendering: pixelated;
   shape-rendering: crispEdges;
+}
+
+.replay {
+  position: absolute;
+  left: calc(50% + var(--stage-w, 65vw) / 2 - var(--seen) - 23px - var(--icon-step));
 }
 
 #sound .icon-off,
@@ -191,7 +272,8 @@ video.source {
 }
 
 /* the piece is directly below, so the tooltip goes above the icon */
-#sound::after {
+#sound::after,
+.replay::after {
   content: attr(data-tip);
   position: absolute;
   bottom: calc(100% - 2px);
@@ -211,7 +293,9 @@ video.source {
 }
 
 #sound:hover::after,
-#sound:focus-visible::after {
+#sound:focus-visible::after,
+.replay:hover::after,
+.replay:focus-visible::after {
   opacity: 1;
 }
 

@@ -386,9 +386,24 @@ export function createPond(section) {
     feedBtn.addEventListener('click', scatterFood);
   }
 
+  /** Back to one koi in still water. */
+  function reset() {
+    kois.length = 0;
+    ripples.length = 0;
+    pellets.length = 0;
+    dropsInFlight = 0;
+    wasFeeding = false;
+    lastAte = performance.now() / 1000;
+    feedBtn.disabled = false;
+
+    const p = world.pond;
+    kois.push(new Koi(p.cx, p.cy - world.height * 0.08, world.scale, { instant: true }));
+  }
+
   return {
     start,
     resize,
+    reset,
     setRunning(next) {
       if (next === running) return;
       running = next;

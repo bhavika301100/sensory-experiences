@@ -2,15 +2,17 @@ import './style.css';
 import { computeStage } from './stage.js';
 import { createPond } from './pond.js';
 import { createHalftone } from './halftone.js';
+import { createScratch } from './scratch.js';
 import { prepare, unlock, audioState, isMuted, setMuted, setScene } from './audio.js';
 
 const soundBtn = document.getElementById('sound');
 const sections = [...document.querySelectorAll('.piece')];
 
+const BUILDERS = { pond: createPond, halftone: createHalftone, scratch: createScratch };
+
 const pieces = sections.map((section) => {
   const kind = section.dataset.scene;
-  const piece = kind === 'pond' ? createPond(section) : createHalftone(section);
-  return { section, kind, piece };
+  return { section, kind, piece: BUILDERS[kind](section) };
 });
 
 /** The label states where the sound currently is, not what the click will do. */
@@ -59,6 +61,11 @@ async function init() {
     if (!isMuted()) unlock();
   });
 
+  for (const { section, piece } of pieces) {
+    const replay = section.querySelector('.replay');
+    if (replay && piece.reset) replay.addEventListener('click', () => piece.reset());
+  }
+
   await Promise.all(pieces.map(({ piece }) => piece.start()));
 
   // Only the piece on screen animates, and only its bed plays. Both pieces run
@@ -101,6 +108,7 @@ async function init() {
     window.__pond = {
       ...pieces[0].piece.debug,
       halftone: pieces[1].piece.debug,
+      scratch: pieces[2].piece.debug,
       audioState,
       setScene,
       sections,

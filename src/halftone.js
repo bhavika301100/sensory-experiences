@@ -2,7 +2,7 @@
 // so it can take the same feathered edge as the water — and so the lens can
 // redraw one square of it in monotone.
 
-import { stage, featherMask, asset } from './stage.js';
+import { stage, featherMask, asset, coverRect as fitCover } from './stage.js';
 
 const LENS = 200; // px, as asked
 const FOLLOW = 0.32; // cursor lerp per frame — enough to smooth, not enough to lag
@@ -51,22 +51,7 @@ export function createHalftone(section) {
     mask = featherMask(w, h, stage.feather, stage.radius);
   }
 
-  /** Source rect that fills the stage box without distorting — object-fit: cover. */
-  function coverRect() {
-    const vw = video.videoWidth;
-    const vh = video.videoHeight;
-    if (!vw || !vh) return null;
-
-    const target = w / h;
-    const source = vw / vh;
-
-    if (source > target) {
-      const sw = vh * target;
-      return { sx: (vw - sw) / 2, sy: 0, sw, sh: vh };
-    }
-    const sh = vw / target;
-    return { sx: 0, sy: (vh - sh) / 2, sw: vw, sh };
-  }
+  const coverRect = () => fitCover(video.videoWidth, video.videoHeight, w, h);
 
   /** Paints the magnified square off-screen, ready to be tinted in one pass. */
   function drawLens(cover, lx, ly) {

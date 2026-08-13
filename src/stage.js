@@ -49,6 +49,19 @@ export function computeStage() {
   return stage;
 }
 
+/** Source rect that fills the destination box without distorting — object-fit: cover. */
+export function coverRect(srcW, srcH, dstW, dstH) {
+  if (!srcW || !srcH || !dstW || !dstH) return null;
+
+  const target = dstW / dstH;
+  if (srcW / srcH > target) {
+    const sw = srcH * target;
+    return { sx: (srcW - sw) / 2, sy: 0, sw, sh: srcH };
+  }
+  const sh = srcW / target;
+  return { sx: 0, sy: (srcH - sh) / 2, sw: srcW, sh };
+}
+
 function smin(a, b, k) {
   const h = clamp(0.5 + (0.5 * (b - a)) / k, 0, 1);
   return a * h + b * (1 - h) - k * h * (1 - h);

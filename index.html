@@ -29,6 +29,11 @@
 
     <main>
       <section class="piece" data-scene="pond">
+        <button class="replay" type="button" data-tip="replay" aria-label="replay">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M10 18H18V20H8V17H10V18ZM20 18H18V10H20V18ZM10 14H8V12H6V10H4V8H6V6H8V4H10V8H18V10H10V14Z" fill="currentColor"/>
+          </svg>
+        </button>
         <div class="stage">
           <canvas class="layer bg"></canvas>
           <canvas class="layer fg"></canvas>
@@ -49,6 +54,33 @@
         <div class="caption">
           <p class="title">oh, to be young and free</p>
           <p class="hint">hover and explore</p>
+        </div>
+      </section>
+
+      <section class="piece" data-scene="scratch">
+        <button class="replay" type="button" data-tip="replay" aria-label="replay">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M10 18H18V20H8V17H10V18ZM20 18H18V10H20V18ZM10 14H8V12H6V10H4V8H6V6H8V4H10V8H18V10H10V14Z" fill="currentColor"/>
+          </svg>
+        </button>
+        <div class="stage">
+          <!-- src is set in scratch.js so it resolves against the deploy base -->
+          <video class="layer source" muted loop playsinline preload="auto" aria-hidden="true"></video>
+          <canvas class="layer fg"></canvas>
+        </div>
+        <div class="caption">
+          <p class="title">
+            make
+            <a
+              class="karl"
+              href="https://en.wikipedia.org/wiki/San_Francisco_fog"
+              target="_blank"
+              rel="noopener noreferrer"
+              >karl<span class="ext" aria-hidden="true">↗</span></a
+            >
+            go away
+          </p>
+          <p class="hint">scratch this</p>
         </div>
       </section>
     </main>
