@@ -3,6 +3,10 @@
 // into the paper — so the whole page reads as one set.
 
 export const STAGE_FRACTION = 0.65;
+// the fire piece goes nearly full-bleed — it's a night scene, and holding it in
+// a paper frame the size of the others made it read as a picture of a campfire
+// rather than as sitting at one
+export const FULL_FRACTION = 0.995;
 
 /**
  * Resolve a file in `public/` against the deployed base path.
@@ -16,7 +20,10 @@ export const asset = (path) => `${import.meta.env.BASE_URL}${path}`;
 export const stage = {
   w: 0,
   h: 0,
+  fullW: 0,
+  fullH: 0,
   feather: 0,
+  fullFeather: 0,
   radius: 16,
   scale: 1,
   dpr: 1,
@@ -33,8 +40,16 @@ export function computeStage() {
   stage.w = Math.max(20, Math.round(vw * STAGE_FRACTION));
   stage.h = Math.max(20, Math.round(vh * STAGE_FRACTION));
 
+  stage.fullW = Math.max(20, Math.round(vw * FULL_FRACTION));
+  stage.fullH = Math.max(20, Math.round(vh * FULL_FRACTION));
+
   const min = Math.min(stage.w, stage.h);
   stage.feather = clamp(min * 0.085, 20, 80);
+  // The full-bleed stage gets its own, much tighter edge. The 65% stage can
+  // afford a wide dissolve because there's paper on every side to dissolve
+  // *into*; out at full-bleed the same band is the entire margin, and reads as
+  // the piece being surrounded by whitespace rather than as an edge.
+  stage.fullFeather = clamp(Math.min(stage.fullW, stage.fullH) * 0.022, 10, 28);
   stage.radius = 16;
   // content is sized off the stage, not the viewport, so it keeps its
   // proportions when the stage changes size
@@ -45,6 +60,9 @@ export function computeStage() {
   root.setProperty('--stage-w', `${stage.w}px`);
   root.setProperty('--stage-h', `${stage.h}px`);
   root.setProperty('--feather', `${stage.feather}px`);
+  root.setProperty('--full-feather', `${stage.fullFeather}px`);
+  root.setProperty('--stage-full-w', `${stage.fullW}px`);
+  root.setProperty('--stage-full-h', `${stage.fullH}px`);
 
   return stage;
 }

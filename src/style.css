@@ -15,6 +15,29 @@
   /* centre-to-centre spacing between the header icons */
   --icon-step: 28px;
   --ink: 30, 40, 50;
+  --paper: 239, 238, 233;
+  /* 0 while the paper pieces are on screen, 1 over the fire. main.js drives it
+     off scroll position; it moves the stage out to full-bleed and flips the
+     shared toggle to read on the fire's dark canvas rather than on paper. */
+  --dark: 0;
+  /* whichever stage is currently on screen, blended by --dark */
+  --stage-cur-w: calc(var(--stage-w, 65vw) + (var(--stage-full-w, 99.5vw) - var(--stage-w, 65vw)) * var(--dark));
+  --stage-cur-h: calc(var(--stage-h, 65vh) + (var(--stage-full-h, 99.5vh) - var(--stage-h, 65vh)) * var(--dark));
+
+  /* The fire piece is full-bleed, so its label and its toggle sit *on* the
+     artwork rather than on paper below it — inset by the same amount top and
+     bottom, so the two read as a matched pair. */
+  --fire-pad: calc(var(--full-feather, 20px) + var(--gap));
+
+  /* The toggle is fixed and shared by every piece, so its offset from the
+     viewport centre has to blend between the two stages as the page goes to
+     night. 23px = half the 30px hit area + the 8px it stands off the edge. */
+  --icon-y-paper: calc(var(--stage-h, 65vh) / -2 + var(--seen) - var(--gap) - 23px);
+  --icon-y-night: calc(var(--stage-full-h, 99.5vh) / -2 + var(--fire-pad));
+  --icon-x-paper: calc(var(--stage-w, 65vw) / 2 - var(--seen) - 23px);
+  --icon-x-night: calc(var(--stage-full-w, 99.5vw) / 2 - var(--fire-pad) - 30px);
+  --icon-y: calc(var(--icon-y-paper) + (var(--icon-y-night) - var(--icon-y-paper)) * var(--dark));
+  --icon-x: calc(var(--icon-x-paper) + (var(--icon-x-night) - var(--icon-x-paper)) * var(--dark));
 }
 
 html {
@@ -24,8 +47,9 @@ html {
 }
 
 body {
-  /* warm paper every piece dissolves into */
-  background: #efeee9;
+  /* warm paper every piece dissolves into, the fire included — it's the one
+     surface the whole set shares, so it stays put while the pieces change */
+  background: rgb(var(--paper));
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   text-transform: lowercase;
   -webkit-tap-highlight-color: transparent;
@@ -49,6 +73,55 @@ body {
   height: 100vh;
   height: 100svh;
   scroll-snap-align: start;
+}
+
+.piece[data-scene='fire'] .stage {
+  width: var(--stage-full-w, 99.5vw);
+  height: var(--stage-full-h, 99.5vh);
+}
+
+/* Full-bleed, so the caption sits on the artwork rather than under it — pinned
+   by its bottom edge, the same --fire-pad in from the stage as the toggle is
+   down from the top. */
+.piece[data-scene='fire'] .caption {
+  width: calc(var(--stage-full-w, 99.5vw) - 2 * var(--fire-pad));
+  top: auto;
+  bottom: calc(50% - var(--stage-full-h, 99.5vh) / 2 + var(--fire-pad));
+}
+
+.piece[data-scene='fire'] .title {
+  color: rgba(248, 244, 238, 0.9);
+}
+
+.piece[data-scene='fire'] .hint {
+  color: rgba(248, 244, 238, 0.5);
+}
+
+/* nudges down and back, so the invitation is something you catch in the corner
+   of your eye rather than a static label */
+.hint .arrow {
+  display: inline-block;
+  margin-left: 0.35em;
+  animation: nudge 2.6s ease-in-out infinite;
+}
+
+@keyframes nudge {
+  0%,
+  62%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translateY(3px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint .arrow {
+    animation: none;
+  }
 }
 
 .stage {
@@ -223,8 +296,8 @@ video.source {
 #sound,
 .replay {
   position: fixed;
-  top: calc(50% - var(--stage-h, 65vh) / 2 + var(--seen) - var(--gap) - 23px);
-  left: calc(50% + var(--stage-w, 65vw) / 2 - var(--seen) - 23px);
+  top: calc(50% + var(--icon-y));
+  left: calc(50% + var(--icon-x));
   z-index: 4;
   display: grid;
   place-items: center;
@@ -235,15 +308,25 @@ video.source {
   cursor: pointer;
   border: none;
   background: none;
-  color: rgba(var(--ink), 0.5);
+  /* the toggle is fixed and shared, so it has to read on paper and on night
+     alike — this rides the same variable the background does */
+  color: rgb(
+    calc(30 + (238 - 30) * var(--dark)) calc(40 + (233 - 40) * var(--dark))
+      calc(50 + (226 - 50) * var(--dark)) / calc(0.5 + 0.25 * var(--dark))
+  );
   transition: color 0.3s ease;
 }
 
+/* hover has to lift *away* from the background, which means darker on paper and
+   brighter on night — a fixed dark ink here disappeared over the fire */
 #sound:hover,
 #sound:focus-visible,
 .replay:hover,
 .replay:focus-visible {
-  color: rgba(20, 28, 36, 0.9);
+  color: rgb(
+    calc(20 + (255 - 20) * var(--dark)) calc(28 + (250 - 28) * var(--dark))
+      calc(36 + (244 - 36) * var(--dark)) / 0.95
+  );
 }
 
 #sound svg,
@@ -259,7 +342,7 @@ video.source {
 
 .replay {
   position: absolute;
-  left: calc(50% + var(--stage-w, 65vw) / 2 - var(--seen) - 23px - var(--icon-step));
+  left: calc(50% + var(--icon-x) - var(--icon-step));
 }
 
 #sound .icon-off,
@@ -283,9 +366,20 @@ video.source {
   font-size: 0.58rem;
   font-weight: 300;
   letter-spacing: 0.16em;
-  color: rgba(var(--ink), 0.78);
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(var(--ink), 0.14);
+  /* the whole chip inverts as the page goes to night — previously only the
+     plate did, leaving dark text on a dark plate over the fire */
+  color: rgb(
+    calc(30 + (244 - 30) * var(--dark)) calc(40 + (240 - 40) * var(--dark))
+      calc(50 + (234 - 50) * var(--dark)) / 0.85
+  );
+  background: rgb(
+    calc(255 + (38 - 255) * var(--dark)) calc(255 + (28 - 255) * var(--dark))
+      calc(255 + (22 - 255) * var(--dark)) / 0.94
+  );
+  border: 1px solid rgb(
+    calc(30 + (240 - 30) * var(--dark)) calc(40 + (236 - 40) * var(--dark))
+      calc(50 + (230 - 50) * var(--dark)) / calc(0.14 + 0.1 * var(--dark))
+  );
   border-radius: 3px;
   opacity: 0;
   pointer-events: none;

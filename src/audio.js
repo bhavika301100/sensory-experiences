@@ -10,6 +10,7 @@ const DRIP_GAIN = 0.62;
 const SWIM_GAIN = 0.22;
 const REVEAL_GAIN = 0.25; // your reveal clip, at about a third of its original level
 const WIND_GAIN = 0.13; // peak of the gust when sweeping hard
+const FIRE_GAIN = 0.4; // the crackling bed
 const WIND_BED_GAIN = 0.011; // the calm wind that's just always there — barely perceptible
 const CROSSFADE = 1.4; // s to hand over between pieces
 const MUTE_KEY = 'koi-pond:muted';
@@ -17,7 +18,7 @@ const MUTE_KEY = 'koi-pond:muted';
 let ctx = null;
 let master = null;
 let ready = null;
-let buffers = { drip: null, swim: null, music: null, reveal: null };
+let buffers = { drip: null, swim: null, music: null, reveal: null, fire: null };
 let scratch = null; // lazily built noise rig for the scratch piece
 let ambienceStarted = false;
 let muted = false;
@@ -28,6 +29,8 @@ let ambienceGain = null;
 let musicGain = null;
 let musicSource = null;
 let windBedGain = null;
+let fireGain = null;
+let fireSource = null;
 let scene = 'pond';
 
 try {
@@ -166,6 +169,21 @@ function startWindBed() {
   applyScene();
 }
 
+function startFire() {
+  if (fireSource || !buffers.fire || !ctx || muted) return;
+
+  fireSource = ctx.createBufferSource();
+  fireSource.buffer = buffers.fire;
+  fireSource.loop = true;
+
+  fireGain = ctx.createGain();
+  fireGain.gain.value = 0;
+
+  fireSource.connect(fireGain).connect(master);
+  fireSource.start();
+  applyScene();
+}
+
 /** Hand the bed over to whichever piece is on screen. Only one is ever up. */
 function applyScene() {
   if (!ctx) return;
@@ -186,6 +204,10 @@ function applyScene() {
     windBedGain.gain.cancelScheduledValues(t);
     windBedGain.gain.setTargetAtTime(scene === 'scratch' ? WIND_BED_GAIN : 0, t, tau);
   }
+  if (fireGain) {
+    fireGain.gain.cancelScheduledValues(t);
+    fireGain.gain.setTargetAtTime(scene === 'fire' ? FIRE_GAIN : 0, t, tau);
+  }
 }
 
 export function setScene(next) {
@@ -195,6 +217,7 @@ export function setScene(next) {
     ensureAmbience();
     startMusic();
     startWindBed();
+    startFire();
   }
   applyScene();
 }
@@ -230,8 +253,9 @@ export function prepare() {
     load(asset('assets/swim.mp3')).catch(() => null),
     load(asset('assets/music.m4a')).catch(() => null),
     load(asset('assets/reveal.mp3')).catch(() => null),
-  ]).then(([drip, swim, music, reveal]) => {
-    buffers = { drip, swim, music, reveal };
+    load(asset('assets/fire.mp3')).catch(() => null),
+  ]).then(([drip, swim, music, reveal, fire]) => {
+    buffers = { drip, swim, music, reveal, fire };
     if (!muted && scene === 'halftone') startMusic();
   });
 
@@ -440,11 +464,14 @@ export function setMuted(next) {
       ensureAmbience();
       startMusic();
       startWindBed();
+      startFire();
+    startFire();
     });
   } else {
     ensureAmbience();
     startMusic();
     startWindBed();
+    startFire();
   }
 
   return muted;
@@ -461,6 +488,7 @@ export function audioState() {
     ambienceLevel: ambienceGain ? +ambienceGain.gain.value.toFixed(4) : null,
     musicLevel: musicGain ? +musicGain.gain.value.toFixed(4) : null,
     windBedLevel: windBedGain ? +windBedGain.gain.value.toFixed(4) : null,
+    fireLevel: fireGain ? +fireGain.gain.value.toFixed(4) : null,
     contextState: ctx?.state ?? null,
     sampleRate: ctx?.sampleRate ?? null,
     dripSeconds: buffers.drip ? +buffers.drip.duration.toFixed(2) : null,
