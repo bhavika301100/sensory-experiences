@@ -4,19 +4,19 @@
 
 import { asset } from './stage.js';
 
-const AMBIENCE_GAIN = 0.05; // the still-water bed, deliberately far back
-const MUSIC_GAIN = 0.5; // the halftone piece's soundtrack
+const AMBIENCE_GAIN = 0.09375; // the still-water bed, deliberately far back
+const MUSIC_GAIN = 0.9375; // the halftone piece's soundtrack
 const DRIP_GAIN = 0.62;
 const SWIM_GAIN = 0.22;
 const REVEAL_GAIN = 0.25; // your reveal clip, at about a third of its original level
 const WIND_GAIN = 0.13; // peak of the gust when sweeping hard
-const FIRE_GAIN = 0.4; // the crackling bed
-const WIND_BED_GAIN = 0.011; // the calm wind that's just always there — barely perceptible
-const CROSSFADE = 1.4; // s to hand over between pieces
-const MUTE_KEY = 'koi-pond:muted';
+const FIRE_GAIN = 0.75; // the crackling bed
+const WIND_BED_GAIN = 0.02578125; // the calm wind that's just always there — barely perceptible
+const SCENES = ['pond', 'halftone', 'scratch', 'fire'];
 
 let ctx = null;
 let master = null;
+let sceneBuses = {};
 let ready = null;
 let buffers = { drip: null, swim: null, music: null, reveal: null, fire: null };
 let scratch = null; // lazily built noise rig for the scratch piece
@@ -33,11 +33,13 @@ let fireGain = null;
 let fireSource = null;
 let scene = 'pond';
 
-try {
-  muted = localStorage.getItem(MUTE_KEY) === '1';
-} catch {
-  muted = false;
+function stopAudioContext() {
+  clearTimeout(suspendTimer);
+  if (ctx && ctx.state !== 'closed') ctx.close().catch(() => {});
 }
+
+window.addEventListener('pagehide', stopAudioContext, { once: true });
+if (import.meta.hot) import.meta.hot.dispose(stopAudioContext);
 
 async function load(url) {
   const res = await fetch(url);
@@ -100,18 +102,17 @@ function startAmbience() {
   hp.frequency.value = 55;
 
   const gain = ctx.createGain();
-  gain.gain.value = 0;
+  gain.gain.value = AMBIENCE_GAIN;
 
   // No swell on the level — an amplitude LFO here is heard as the bed dropping
   // away and coming back. The cutoff drift above already gives it movement,
   // as a change in timbre rather than in loudness, so the volume stays put.
-  src.connect(lp).connect(hp).connect(gain).connect(master);
+  src.connect(lp).connect(hp).connect(gain).connect(sceneBuses.pond);
 
   src.start();
   cutoffLfo.start();
 
   ambienceGain = gain;
-  applyScene();
 }
 
 function startMusic() {
@@ -122,11 +123,10 @@ function startMusic() {
   musicSource.loop = true;
 
   musicGain = ctx.createGain();
-  musicGain.gain.value = 0;
+  musicGain.gain.value = MUSIC_GAIN;
 
-  musicSource.connect(musicGain).connect(master);
+  musicSource.connect(musicGain).connect(sceneBuses.halftone);
   musicSource.start();
-  applyScene();
 }
 
 /**
@@ -159,14 +159,13 @@ function startWindBed() {
   hp.frequency.value = 90;
 
   const gain = ctx.createGain();
-  gain.gain.value = 0;
+  gain.gain.value = WIND_BED_GAIN;
 
-  src.connect(lp).connect(hp).connect(gain).connect(master);
+  src.connect(lp).connect(hp).connect(gain).connect(sceneBuses.scratch);
   src.start();
   drift.start();
 
   windBedGain = gain;
-  applyScene();
 }
 
 function startFire() {
@@ -177,37 +176,38 @@ function startFire() {
   fireSource.loop = true;
 
   fireGain = ctx.createGain();
-  fireGain.gain.value = 0;
+  fireGain.gain.value = FIRE_GAIN;
 
-  fireSource.connect(fireGain).connect(master);
+  fireSource.connect(fireGain).connect(sceneBuses.fire);
   fireSource.start();
-  applyScene();
 }
 
-/** Hand the bed over to whichever piece is on screen. Only one is ever up. */
+function busLevels() {
+  return Object.fromEntries(
+    Object.entries(sceneBuses).map(([kind, bus]) => [kind, +bus.gain.value.toFixed(2)])
+  );
+}
+
+function publishAudioDebug() {
+  if (!import.meta.env.DEV) return;
+  document.documentElement.dataset.audioScene = scene;
+  document.documentElement.dataset.audioMuted = String(muted);
+  document.documentElement.dataset.audioBuses = JSON.stringify(busLevels());
+  document.documentElement.dataset.audioContext = ctx?.state ?? 'missing';
+}
+
+/** Hard-gate every scene bus. Exactly one bus is open at any moment. */
 function applyScene() {
   if (!ctx) return;
   const t = ctx.currentTime;
-  // setTargetAtTime is exponential; a third of the crossfade as the time
-  // constant lands it ~95% of the way there in CROSSFADE seconds
-  const tau = CROSSFADE / 3;
-
-  if (ambienceGain) {
-    ambienceGain.gain.cancelScheduledValues(t);
-    ambienceGain.gain.setTargetAtTime(scene === 'pond' ? AMBIENCE_GAIN : 0, t, tau);
+  for (const [kind, bus] of Object.entries(sceneBuses)) {
+    bus.gain.cancelScheduledValues(t);
+    // Assign directly so the gate also changes while the AudioContext is
+    // suspended. Scheduling several changes at the same frozen context time
+    // can leave stale gates queued until the next user gesture resumes audio.
+    bus.gain.value = kind === scene ? 1 : 0;
   }
-  if (musicGain) {
-    musicGain.gain.cancelScheduledValues(t);
-    musicGain.gain.setTargetAtTime(scene === 'halftone' ? MUSIC_GAIN : 0, t, tau);
-  }
-  if (windBedGain) {
-    windBedGain.gain.cancelScheduledValues(t);
-    windBedGain.gain.setTargetAtTime(scene === 'scratch' ? WIND_BED_GAIN : 0, t, tau);
-  }
-  if (fireGain) {
-    fireGain.gain.cancelScheduledValues(t);
-    fireGain.gain.setTargetAtTime(scene === 'fire' ? FIRE_GAIN : 0, t, tau);
-  }
+  publishAudioDebug();
 }
 
 export function setScene(next) {
@@ -230,9 +230,9 @@ function connectThrough(node, x) {
   if (ctx.createStereoPanner) {
     const p = ctx.createStereoPanner();
     p.pan.value = Math.max(-0.7, Math.min(0.7, (x / window.innerWidth) * 2 - 1)) * 0.6;
-    node.connect(p).connect(master);
+    node.connect(p).connect(sceneBuses.pond);
   } else {
-    node.connect(master);
+    node.connect(sceneBuses.pond);
   }
 }
 
@@ -247,6 +247,16 @@ export function prepare() {
   master = ctx.createGain();
   master.gain.value = muted ? 0 : 1;
   master.connect(ctx.destination);
+
+  sceneBuses = Object.fromEntries(
+    SCENES.map((kind) => {
+      const bus = ctx.createGain();
+      bus.gain.value = kind === scene ? 1 : 0;
+      bus.connect(master);
+      return [kind, bus];
+    })
+  );
+  publishAudioDebug();
 
   ready = Promise.all([
     load(asset('assets/drip.mp3')).catch(() => null),
@@ -272,10 +282,19 @@ function ensureAmbience() {
 export async function unlock() {
   prepare();
   if (!ctx || muted) return;
-  if (ctx.state === 'suspended') await ctx.resume();
+  if (ctx.state === 'suspended') {
+    try {
+      await ctx.resume();
+    } catch {
+      return;
+    }
+  }
+  if (ctx.state !== 'running') return;
   ensureAmbience();
   startMusic();
   startWindBed();
+  startFire();
+  publishAudioDebug();
 }
 
 /**
@@ -393,8 +412,8 @@ function ensureWindRig() {
   const edgeGain = ctx.createGain();
   edgeGain.gain.value = 0;
 
-  src.connect(body).connect(bodyGain).connect(master);
-  src.connect(edge).connect(edgeGain).connect(master);
+  src.connect(body).connect(bodyGain).connect(sceneBuses.scratch);
+  src.connect(edge).connect(edgeGain).connect(sceneBuses.scratch);
   src.start();
 
   scratch = { body, bodyGain, edge, edgeGain };
@@ -431,7 +450,7 @@ export function playReveal() {
   src.buffer = buffers.reveal;
   const gain = ctx.createGain();
   gain.gain.value = REVEAL_GAIN;
-  src.connect(gain).connect(master);
+  src.connect(gain).connect(sceneBuses.scratch);
   src.start();
 }
 
@@ -439,18 +458,18 @@ export function isMuted() {
   return muted;
 }
 
+export function isAudioRunning() {
+  return !!ctx && ctx.state === 'running' && !muted;
+}
+
 export function setMuted(next) {
   muted = next;
-  try {
-    localStorage.setItem(MUTE_KEY, muted ? '1' : '0');
-  } catch {
-    /* private mode — the toggle still works for this session */
-  }
   if (!ctx || !master) return muted;
 
   // short ramp rather than a step, so muting doesn't click
   master.gain.cancelScheduledValues(ctx.currentTime);
   master.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.04);
+  applyScene();
 
   clearTimeout(suspendTimer);
   if (muted) {
@@ -465,7 +484,6 @@ export function setMuted(next) {
       startMusic();
       startWindBed();
       startFire();
-    startFire();
     });
   } else {
     ensureAmbience();
@@ -489,6 +507,7 @@ export function audioState() {
     musicLevel: musicGain ? +musicGain.gain.value.toFixed(4) : null,
     windBedLevel: windBedGain ? +windBedGain.gain.value.toFixed(4) : null,
     fireLevel: fireGain ? +fireGain.gain.value.toFixed(4) : null,
+    sceneBuses: busLevels(),
     contextState: ctx?.state ?? null,
     sampleRate: ctx?.sampleRate ?? null,
     dripSeconds: buffers.drip ? +buffers.drip.duration.toFixed(2) : null,

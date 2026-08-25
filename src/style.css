@@ -1,5 +1,5 @@
-@import '@fontsource/jetbrains-mono/300.css';
-@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource-variable/zalando-sans/wght.css';
+@import '@fontsource-variable/geist-mono/wght.css';
 
 * {
   margin: 0;
@@ -8,36 +8,32 @@
 }
 
 :root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
   /* breathing room between a piece and everything around it */
-  --gap: 16px;
+  --gap: var(--space-4);
   /* --stage-w, --stage-h and --feather are published by stage.js */
   --seen: calc(var(--feather, 40px) / 2);
   /* centre-to-centre spacing between the header icons */
-  --icon-step: 28px;
+  --icon-step: var(--space-8);
   --ink: 30, 40, 50;
   --paper: 239, 238, 233;
-  /* 0 while the paper pieces are on screen, 1 over the fire. main.js drives it
-     off scroll position; it moves the stage out to full-bleed and flips the
-     shared toggle to read on the fire's dark canvas rather than on paper. */
-  --dark: 0;
-  /* whichever stage is currently on screen, blended by --dark */
-  --stage-cur-w: calc(var(--stage-w, 65vw) + (var(--stage-full-w, 99.5vw) - var(--stage-w, 65vw)) * var(--dark));
-  --stage-cur-h: calc(var(--stage-h, 65vh) + (var(--stage-full-h, 99.5vh) - var(--stage-h, 65vh)) * var(--dark));
 
-  /* The fire piece is full-bleed, so its label and its toggle sit *on* the
-     artwork rather than on paper below it — inset by the same amount top and
-     bottom, so the two read as a matched pair. */
+  /* The fire piece is full-bleed, so its label and controls sit on the artwork. */
   --fire-pad: calc(var(--full-feather, 20px) + var(--gap));
 
-  /* The toggle is fixed and shared by every piece, so its offset from the
-     viewport centre has to blend between the two stages as the page goes to
-     night. 23px = half the 30px hit area + the 8px it stands off the edge. */
-  --icon-y-paper: calc(var(--stage-h, 65vh) / -2 + var(--seen) - var(--gap) - 23px);
-  --icon-y-night: calc(var(--stage-full-h, 99.5vh) / -2 + var(--fire-pad));
-  --icon-x-paper: calc(var(--stage-w, 65vw) / 2 - var(--seen) - 23px);
-  --icon-x-night: calc(var(--stage-full-w, 99.5vw) / 2 - var(--fire-pad) - 30px);
-  --icon-y: calc(var(--icon-y-paper) + (var(--icon-y-night) - var(--icon-y-paper)) * var(--dark));
-  --icon-x: calc(var(--icon-x-paper) + (var(--icon-x-night) - var(--icon-x-paper)) * var(--dark));
+  /* 24px is half the 32px hit area plus the 8px stand-off from the artwork. */
+  --control-top: calc(50% - var(--stage-h, 65vh) / 2 + var(--seen) - var(--gap) - var(--space-6));
+  --control-left: calc(50% + var(--stage-w, 65vw) / 2 - var(--seen) - var(--space-6));
 }
 
 html {
@@ -50,10 +46,117 @@ body {
   /* warm paper every piece dissolves into, the fire included — it's the one
      surface the whole set shares, so it stays put while the pieces change */
   background: rgb(var(--paper));
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'Geist Mono Variable', ui-monospace, monospace;
   text-transform: lowercase;
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
+}
+
+.icon-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.content-column {
+  width: calc(var(--stage-w, 65vw) - 2 * var(--seen));
+  margin-inline: auto;
+}
+
+.site-intro {
+  position: relative;
+  z-index: 3;
+  padding-block: var(--space-24) var(--space-6);
+  text-align: center;
+  scroll-snap-align: start;
+}
+
+.site-intro h1 {
+  font-family: 'Zalando Sans Variable', sans-serif;
+}
+
+.site-intro h1,
+.site-intro p {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.08) 12%,
+    rgba(0, 0, 0, 0.55) 28%,
+    #000 48%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.08) 12%,
+    rgba(0, 0, 0, 0.55) 28%,
+    #000 48%,
+    #000 100%
+  );
+  -webkit-mask-size: 100% 300%;
+  mask-size: 100% 300%;
+}
+
+.site-intro h1 {
+  max-width: 20ch;
+  margin-inline: auto;
+  animation: text-dissolve 3.2s cubic-bezier(0.4, 0, 0.2, 1) both;
+  color: rgba(var(--ink), 0.9);
+  font-size: 32px;
+  font-weight: 450;
+  line-height: 36px;
+  letter-spacing: -0.035em;
+}
+
+.site-intro p {
+  max-width: 64ch;
+  margin: var(--space-2) auto 0;
+  animation: text-dissolve 3.6s 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  color: rgba(var(--ink), 0.56);
+  font-size: 12px;
+  font-weight: 300;
+  line-height: 20px;
+  letter-spacing: 0.035em;
+}
+
+@keyframes text-dissolve {
+  0% {
+    opacity: 0;
+    -webkit-mask-position: center top;
+    mask-position: center top;
+  }
+  28% {
+    opacity: 0.18;
+  }
+  100% {
+    opacity: 1;
+    -webkit-mask-position: center bottom;
+    mask-position: center bottom;
+  }
+}
+
+.site-footer {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  min-height: 144px;
+  align-items: center;
+  color: rgba(var(--ink), 0.62);
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  scroll-snap-align: end;
+}
+
+.site-footer .content-column {
+  text-align: center;
+}
+
+.site-footer span {
+  display: inline-block;
+  margin-right: var(--space-2);
+  color: rgba(var(--ink), 0.74);
 }
 
 /* one grain field over paper and pieces alike, so it all reads as one surface */
@@ -73,6 +176,10 @@ body {
   height: 100vh;
   height: 100svh;
   scroll-snap-align: start;
+}
+
+.piece:first-child {
+  margin-top: calc(var(--space-32) * -1);
 }
 
 .piece[data-scene='fire'] .stage {
@@ -101,7 +208,7 @@ body {
    of your eye rather than a static label */
 .hint .arrow {
   display: inline-block;
-  margin-left: 0.35em;
+  margin-left: var(--space-1);
   animation: nudge 2.6s ease-in-out infinite;
 }
 
@@ -163,14 +270,12 @@ video.source {
   /* rows pinned to the top of the band, so the row sits under the piece rather
      than floating in the middle of the paper */
   align-content: start;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .title,
 .hint {
-  font-size: clamp(0.58rem, 1.5vw, 0.72rem);
-  font-weight: 300;
-  letter-spacing: 0.18em;
+  font-size: 12px;
   white-space: nowrap;
 }
 
@@ -179,12 +284,17 @@ video.source {
   grid-column: 1;
   justify-self: start;
   color: rgba(var(--ink), 0.82);
+  font-family: 'Geist Mono Variable', ui-monospace, monospace;
+  font-weight: 450;
+  letter-spacing: 0.055em;
 }
 
 .hint {
   grid-column: 3;
   justify-self: end;
   color: rgba(var(--ink), 0.44);
+  font-weight: 300;
+  letter-spacing: 0.14em;
 }
 
 /* karl gets the wavy underline — fog, and a link */
@@ -209,7 +319,7 @@ video.source {
   display: inline-block;
   text-decoration: none;
   font-size: 0.85em;
-  margin-left: 0.15em;
+  margin-left: var(--space-1);
   vertical-align: 0.06em;
 }
 
@@ -260,9 +370,9 @@ video.source {
 .feed {
   grid-column: 2;
   justify-self: center;
-  padding: 0.6rem 1.9rem;
+  padding: var(--space-2) var(--space-6);
   font-family: inherit;
-  font-size: clamp(0.62rem, 1.6vw, 0.78rem);
+  font-size: 12px;
   font-weight: 300;
   letter-spacing: 0.18em;
   text-transform: lowercase;
@@ -290,46 +400,34 @@ video.source {
   opacity: 0.32;
 }
 
-/* One toggle for the whole page. Fixed, and positioned off the same stage
-   geometry every piece uses — with scroll snapping, whichever piece is on
-   screen puts its stage in exactly this spot. 23px = 16px icon + 7px padding. */
-#sound,
+/* Every control belongs to its section, so it stays attached to that artwork. */
+.sound,
 .replay {
-  position: fixed;
-  top: calc(50% + var(--icon-y));
-  left: calc(50% + var(--icon-x));
+  position: absolute;
+  top: var(--control-top);
+  left: var(--control-left);
   z-index: 4;
   display: grid;
   place-items: center;
   box-sizing: content-box;
   width: 16px;
   height: 16px;
-  padding: 7px;
+  padding: var(--space-2);
   cursor: pointer;
   border: none;
   background: none;
-  /* the toggle is fixed and shared, so it has to read on paper and on night
-     alike — this rides the same variable the background does */
-  color: rgb(
-    calc(30 + (238 - 30) * var(--dark)) calc(40 + (233 - 40) * var(--dark))
-      calc(50 + (226 - 50) * var(--dark)) / calc(0.5 + 0.25 * var(--dark))
-  );
+  color: rgba(var(--ink), 0.5);
   transition: color 0.3s ease;
 }
 
-/* hover has to lift *away* from the background, which means darker on paper and
-   brighter on night — a fixed dark ink here disappeared over the fire */
-#sound:hover,
-#sound:focus-visible,
+.sound:hover,
+.sound:focus-visible,
 .replay:hover,
 .replay:focus-visible {
-  color: rgb(
-    calc(20 + (255 - 20) * var(--dark)) calc(28 + (250 - 28) * var(--dark))
-      calc(36 + (244 - 36) * var(--dark)) / 0.95
-  );
+  color: rgba(20, 28, 36, 0.95);
 }
 
-#sound svg,
+.sound svg,
 .replay svg {
   grid-area: 1 / 1;
   display: block;
@@ -341,56 +439,81 @@ video.source {
 }
 
 .replay {
-  position: absolute;
-  left: calc(50% + var(--icon-x) - var(--icon-step));
+  left: calc(var(--control-left) - var(--icon-step));
 }
 
-#sound .icon-off,
-#sound[aria-pressed='false'] .icon-on {
+.sound .icon-off,
+.sound[aria-pressed='false'] .icon-on {
   display: none;
 }
 
-#sound[aria-pressed='false'] .icon-off {
+.sound[aria-pressed='false'] .icon-off {
   display: block;
 }
 
 /* the piece is directly below, so the tooltip goes above the icon */
-#sound::after,
+.sound::after,
 .replay::after {
   content: attr(data-tip);
   position: absolute;
-  bottom: calc(100% - 2px);
-  right: 7px;
-  padding: 0.35rem 0.55rem;
+  bottom: 100%;
+  right: var(--space-2);
+  padding: var(--space-1) var(--space-2);
   white-space: nowrap;
-  font-size: 0.58rem;
+  font-size: 8px;
+  line-height: 12px;
   font-weight: 300;
   letter-spacing: 0.16em;
-  /* the whole chip inverts as the page goes to night — previously only the
-     plate did, leaving dark text on a dark plate over the fire */
-  color: rgb(
-    calc(30 + (244 - 30) * var(--dark)) calc(40 + (240 - 40) * var(--dark))
-      calc(50 + (234 - 50) * var(--dark)) / 0.85
-  );
-  background: rgb(
-    calc(255 + (38 - 255) * var(--dark)) calc(255 + (28 - 255) * var(--dark))
-      calc(255 + (22 - 255) * var(--dark)) / 0.94
-  );
-  border: 1px solid rgb(
-    calc(30 + (240 - 30) * var(--dark)) calc(40 + (236 - 40) * var(--dark))
-      calc(50 + (230 - 50) * var(--dark)) / calc(0.14 + 0.1 * var(--dark))
-  );
-  border-radius: 3px;
+  color: rgba(var(--ink), 0.85);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(var(--ink), 0.14);
+  border-radius: var(--space-1);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
 }
 
-#sound:hover::after,
-#sound:focus-visible::after,
+.sound:hover::after,
+.sound:focus-visible::after,
 .replay:hover::after,
 .replay:focus-visible::after {
   opacity: 1;
+}
+
+.piece[data-scene='fire'] .sound {
+  top: calc(50% - var(--stage-full-h, 99.5vh) / 2 + var(--fire-pad));
+  left: calc(50% + var(--stage-full-w, 99.5vw) / 2 - var(--fire-pad) - var(--space-8));
+  color: rgba(248, 244, 238, 0.75);
+}
+
+.piece[data-scene='fire'] .sound:hover,
+.piece[data-scene='fire'] .sound:focus-visible {
+  color: rgba(255, 250, 244, 0.98);
+}
+
+.piece[data-scene='fire'] .sound::after {
+  color: rgba(244, 240, 234, 0.9);
+  background: rgba(38, 28, 22, 0.94);
+  border-color: rgba(240, 236, 230, 0.24);
+}
+
+.scroll-cue {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .site-intro,
+  .site-footer .content-column {
+    text-align: left;
+  }
+
+  .site-intro h1 {
+    margin-inline: 0;
+  }
+
+  .site-intro p {
+    margin-inline: 0;
+  }
 }
 
 /* Narrow viewports: there isn't room for label + button + label on one line.
@@ -398,16 +521,33 @@ video.source {
    columns wider than their share and shove the button off the stage's axis.
    Two rows instead — button centred above, labels still pinned to the edges. */
 @media (max-width: 560px) {
+  .site-intro {
+    padding-block: var(--space-20) var(--space-4);
+  }
+
+  .site-intro h1 {
+    max-width: 16ch;
+    font-size: 28px;
+    line-height: 32px;
+  }
+
+  .site-intro p {
+    max-width: 38ch;
+    margin-top: var(--space-2);
+    font-size: 12px;
+    line-height: 20px;
+  }
+
   .caption {
     grid-template-areas:
       'feed feed feed'
       'title . hint';
-    gap: 0.7rem 0.5rem;
+    gap: var(--space-3) var(--space-2);
   }
 
   .feed {
     grid-area: feed;
-    padding: 0.55rem 1.5rem;
+    padding: var(--space-2) var(--space-6);
   }
 
   .title {
@@ -417,17 +557,38 @@ video.source {
   .hint {
     grid-area: hint;
   }
-}
 
-/* tighter still: the instruction is the first thing to go */
-@media (max-width: 400px) {
-  .hint {
-    display: none;
+  .scroll-cue {
+    position: absolute;
+    right: max(var(--space-2), env(safe-area-inset-right));
+    bottom: max(var(--space-3), env(safe-area-inset-bottom));
+    z-index: 3;
+    display: block;
+    color: rgba(var(--ink), 0.4);
+    font-size: 12px;
+    line-height: 16px;
+    animation: nudge 2.6s ease-in-out infinite;
+  }
+
+  .site-footer {
+    min-height: 144px;
+    font-size: 12px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .site-intro h1,
+  .site-intro p {
+    animation: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .scroll-cue {
+    animation: none;
   }
 }

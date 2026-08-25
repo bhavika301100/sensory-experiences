@@ -3,6 +3,8 @@
 // into the paper — so the whole page reads as one set.
 
 export const STAGE_FRACTION = 0.65;
+export const MOBILE_BREAKPOINT = 560;
+export const MOBILE_GUTTER = 8;
 // the fire piece goes nearly full-bleed — it's a night scene, and holding it in
 // a paper frame the size of the others made it read as a picture of a campfire
 // rather than as sitting at one
@@ -37,7 +39,10 @@ export function computeStage() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  stage.w = Math.max(20, Math.round(vw * STAGE_FRACTION));
+  stage.w = Math.max(
+    20,
+    Math.round(vw <= MOBILE_BREAKPOINT ? vw - MOBILE_GUTTER * 2 : vw * STAGE_FRACTION)
+  );
   stage.h = Math.max(20, Math.round(vh * STAGE_FRACTION));
 
   stage.fullW = Math.max(20, Math.round(vw * FULL_FRACTION));

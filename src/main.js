@@ -4,9 +4,16 @@ import { createPond } from './pond.js';
 import { createHalftone } from './halftone.js';
 import { createScratch } from './scratch.js';
 import { createFire } from './fire.js';
-import { prepare, unlock, audioState, isMuted, setMuted, setScene } from './audio.js';
+import {
+  prepare,
+  unlock,
+  audioState,
+  isMuted,
+  isAudioRunning,
+  setMuted,
+  setScene,
+} from './audio.js';
 
-const soundBtn = document.getElementById('sound');
 const sections = [...document.querySelectorAll('.piece')];
 
 const BUILDERS = { pond: createPond, halftone: createHalftone, scratch: createScratch, fire: createFire };
@@ -16,13 +23,15 @@ const pieces = sections.map((section) => {
   return { section, kind, piece: BUILDERS[kind](section) };
 });
 
-/** The label states where the sound currently is, not what the click will do. */
-function paintSoundBtn() {
+/** Every local control reflects the one shared mute choice. */
+function paintSoundBtns() {
   const on = !isMuted();
   const label = on ? 'sound on' : 'sound off';
-  soundBtn.setAttribute('aria-pressed', String(on));
-  soundBtn.setAttribute('aria-label', label);
-  soundBtn.dataset.tip = label;
+  for (const soundBtn of document.querySelectorAll('.sound')) {
+    soundBtn.setAttribute('aria-pressed', String(on));
+    soundBtn.setAttribute('aria-label', label);
+    soundBtn.dataset.tip = label;
+  }
 }
 
 function resizeAll() {
@@ -55,19 +64,75 @@ async function init() {
 
   // decode up front so the very first tap has something to play
   prepare();
-  paintSoundBtn();
-  soundBtn.addEventListener('click', () => {
-    setMuted(!isMuted());
-    paintSoundBtn();
-    if (!isMuted()) unlock();
-  });
+  paintSoundBtns();
 
-  for (const { section, piece } of pieces) {
+  // Browsers can suspend first-load audio until a valid user gesture. The
+  // preference still begins on, and playback resumes on the first interaction.
+  const resumeOnGesture = async () => {
+    if (!isMuted()) await unlock();
+    paintSoundBtns();
+    if (isAudioRunning()) {
+      window.removeEventListener('pointerdown', resumeOnGesture, true);
+      window.removeEventListener('pointerup', resumeOnGesture, true);
+      window.removeEventListener('keydown', resumeOnGesture, true);
+    }
+  };
+  window.addEventListener('pointerdown', resumeOnGesture, true);
+  window.addEventListener('pointerup', resumeOnGesture, true);
+  window.addEventListener('keydown', resumeOnGesture, true);
+
+  // Reloads may retain browser permission from the previous page. If so, start
+  // immediately; otherwise the gesture handler above takes over.
+  if (!isMuted()) unlock().then(paintSoundBtns);
+
+  for (const { section, piece, kind } of pieces) {
+    const soundBtn = section.querySelector('.sound');
+    if (soundBtn) {
+      soundBtn.addEventListener('click', async () => {
+        setScene(kind);
+        const muted = setMuted(!isMuted());
+        paintSoundBtns();
+        if (!muted) await unlock();
+      });
+    }
+
     const replay = section.querySelector('.replay');
     if (replay && piece.reset) replay.addEventListener('click', () => piece.reset());
   }
 
   await Promise.all(pieces.map(({ piece }) => piece.start()));
+
+  // Choose one owner for audio from actual visible pixels. This avoids
+  // competing observer callbacks while snapping between two sections.
+  const syncToViewport = () => {
+    let active = null;
+    let mostVisible = -1;
+
+    for (const { section, piece, kind } of pieces) {
+      const r = section.getBoundingClientRect();
+      const shown = Math.max(0, Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0));
+      piece.setRunning(shown > window.innerHeight * 0.5);
+
+      if (shown > mostVisible) {
+        mostVisible = shown;
+        active = kind;
+      }
+    }
+
+    if (active && mostVisible > 0) setScene(active);
+  };
+
+  let sceneFrame = 0;
+  const scheduleSceneSync = () => {
+    if (sceneFrame) return;
+    sceneFrame = requestAnimationFrame(() => {
+      sceneFrame = 0;
+      syncToViewport();
+    });
+  };
+
+  window.addEventListener('scroll', scheduleSceneSync, { passive: true });
+  window.addEventListener('resize', scheduleSceneSync);
 
   // Only the piece on screen animates, and only its bed plays. Both pieces run
   // a render loop and one of them decodes video, so leaving the off-screen one
@@ -79,40 +144,12 @@ async function init() {
         if (!found) continue;
         const visible = entry.isIntersecting && entry.intersectionRatio > 0.5;
         found.piece.setRunning(visible);
-        if (visible) setScene(found.kind);
       }
     },
     { threshold: [0, 0.5, 0.75] }
   );
   for (const { section } of pieces) io.observe(section);
-
-  // Page theme follows the fire piece as it arrives: 0 is paper, 1 is night.
-  // Tied to scroll rather than to the section becoming active, so the change is
-  // something you watch happen rather than something that has happened.
-  const fireSection = pieces.find((p) => p.kind === 'fire')?.section;
-  const root = document.documentElement;
-
-  const syncTheme = () => {
-    if (!fireSection) return;
-    const r = fireSection.getBoundingClientRect();
-    const shown = window.innerHeight - r.top;
-    const t = Math.max(0, Math.min(1, shown / Math.max(1, window.innerHeight)));
-    root.style.setProperty('--dark', t.toFixed(3));
-  };
-
-  window.addEventListener('scroll', syncTheme, { passive: true });
-  window.addEventListener('resize', syncTheme);
-  syncTheme();
-
-  const syncToViewport = () => {
-    for (const { section, piece, kind } of pieces) {
-      const r = section.getBoundingClientRect();
-      const shown = Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0);
-      const visible = shown > window.innerHeight * 0.5;
-      piece.setRunning(visible);
-      if (visible) setScene(kind);
-    }
-  };
+  syncToViewport();
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {

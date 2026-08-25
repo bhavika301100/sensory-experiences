@@ -9,7 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fontsource/jetbrains-mono": "^5.1.0",
+    "@fontsource-variable/geist-mono": "^5.2.8",
+    "@fontsource-variable/zalando-sans": "^5.2.8",
     "shaders": "^3.0.452"
   },
   "devDependencies": {

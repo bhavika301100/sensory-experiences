@@ -86,7 +86,7 @@ export function createFire(section) {
     atlasCtx.setTransform(1, 0, 0, 1, 0, 0);
     atlasCtx.clearRect(0, 0, atlas.width, atlas.height);
     atlasCtx.textBaseline = 'top';
-    atlasCtx.font = `${(CELL_H - 1) * dpr}px 'JetBrains Mono', monospace`;
+    atlasCtx.font = `${(CELL_H - 1) * dpr}px 'Geist Mono Variable', monospace`;
 
     for (let l = 0; l < colours.length; l++) {
       atlasCtx.fillStyle = colours[l];
@@ -303,7 +303,7 @@ export function createFire(section) {
     }
 
     // embers, drawn over the top
-    ctx.font = `${CELL_H - 2}px 'JetBrains Mono', monospace`;
+    ctx.font = `${CELL_H - 2}px 'Geist Mono Variable', monospace`;
     for (const e of embers) {
       const t = e.life;
       ctx.fillStyle = paletteAt(0.62 + t * 0.38);

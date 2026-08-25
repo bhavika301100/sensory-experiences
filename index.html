@@ -6,29 +6,42 @@
     <title>sensory experiences</title>
   </head>
   <body>
+    <svg class="icon-defs" aria-hidden="true">
+      <defs>
+        <symbol id="icon-sound-on" viewBox="0 0 24 24">
+          <path d="M11 22H9V20H7V18H9V6H7V4H9V2H11V22ZM19 22H13V20H19V22ZM21 20H19V18H21V20ZM7 18H5V16H7V18ZM17 18H13V16H17V18ZM23 18H21V6H23V18ZM5 10H3V14H5V16H1V8H5V10ZM19 16H17V8H19V16ZM15 14H13V10H15V14ZM7 8H5V6H7V8ZM17 8H13V6H17V8ZM21 6H19V4H21V6ZM19 4H13V2H19V4Z" fill="currentColor"/>
+        </symbol>
+        <symbol id="icon-sound-off" viewBox="0 0 24 24">
+          <rect x="2" y="1" width="2" height="2" fill="currentColor"/>
+          <rect x="4" y="3" width="2" height="2" fill="currentColor"/>
+          <rect x="6" y="5" width="2" height="2" fill="currentColor"/>
+          <rect x="8" y="7" width="2" height="2" fill="currentColor"/>
+          <rect x="10" y="9" width="2" height="2" fill="currentColor"/>
+          <rect x="12" y="11" width="2" height="2" fill="currentColor"/>
+          <rect x="14" y="13" width="2" height="2" fill="currentColor"/>
+          <rect x="16" y="15" width="2" height="2" fill="currentColor"/>
+          <rect x="18" y="17" width="2" height="2" fill="currentColor"/>
+          <rect x="20" y="19" width="2" height="2" fill="currentColor"/>
+          <path d="M17 22H15V20H13V18H15V6H13V4H15V2H17V22ZM13 18H11V16H13V18ZM11 8V10H9V14H11V16H7V8H11ZM13 8H11V6H13V8Z" fill="currentColor"/>
+        </symbol>
+      </defs>
+    </svg>
+
     <div id="grain" aria-hidden="true"></div>
 
-    <button id="sound" type="button" data-tip="sound on" aria-label="sound on" aria-pressed="true">
-      <svg class="icon-on" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M11 22H9V20H7V18H9V6H7V4H9V2H11V22ZM19 22H13V20H19V22ZM21 20H19V18H21V20ZM7 18H5V16H7V18ZM17 18H13V16H17V18ZM23 18H21V6H23V18ZM5 10H3V14H5V16H1V8H5V10ZM19 16H17V8H19V16ZM15 14H13V10H15V14ZM7 8H5V6H7V8ZM17 8H13V6H17V8ZM21 6H19V4H21V6ZM19 4H13V2H19V4Z" fill="currentColor"/>
-      </svg>
-      <svg class="icon-off" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <rect x="2" y="1" width="2" height="2" fill="currentColor"/>
-        <rect x="4" y="3" width="2" height="2" fill="currentColor"/>
-        <rect x="6" y="5" width="2" height="2" fill="currentColor"/>
-        <rect x="8" y="7" width="2" height="2" fill="currentColor"/>
-        <rect x="10" y="9" width="2" height="2" fill="currentColor"/>
-        <rect x="12" y="11" width="2" height="2" fill="currentColor"/>
-        <rect x="14" y="13" width="2" height="2" fill="currentColor"/>
-        <rect x="16" y="15" width="2" height="2" fill="currentColor"/>
-        <rect x="18" y="17" width="2" height="2" fill="currentColor"/>
-        <rect x="20" y="19" width="2" height="2" fill="currentColor"/>
-        <path d="M17 22H15V20H13V18H15V6H13V4H15V2H17V22ZM13 18H11V16H13V18ZM11 8V10H9V14H11V16H7V8H11ZM13 8H11V6H13V8Z" fill="currentColor"/>
-      </svg>
-    </button>
+    <header class="site-intro">
+      <div class="content-column">
+        <h1>a quiet corner of the internet</h1>
+        <p>tiny sensory experiences, made as a warm reminder to slow down and feel close to nature.</p>
+      </div>
+    </header>
 
     <main>
       <section class="piece" data-scene="pond">
+        <button class="sound" type="button" data-scene="pond" data-tip="sound on" aria-label="sound on" aria-pressed="true">
+          <svg class="icon-on" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sound-on"/></svg>
+          <svg class="icon-off" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sound-off"/></svg>
+        </button>
         <button class="replay" type="button" data-tip="replay" aria-label="replay">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M10 18H18V20H8V17H10V18ZM20 18H18V10H20V18ZM10 14H8V12H6V10H4V8H6V6H8V4H10V8H18V10H10V14Z" fill="currentColor"/>
@@ -43,9 +56,14 @@
           <button class="feed" type="button">feed</button>
           <p class="hint">tap the water</p>
         </div>
+        <span class="scroll-cue" aria-hidden="true">↓</span>
       </section>
 
       <section class="piece" data-scene="halftone">
+        <button class="sound" type="button" data-scene="halftone" data-tip="sound on" aria-label="sound on" aria-pressed="true">
+          <svg class="icon-on" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sound-on"/></svg>
+          <svg class="icon-off" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sound-off"/></svg>
+        </button>
         <div class="stage">
           <!-- src is set in halftone.js so it resolves against the deploy base -->
           <video class="layer source" muted loop playsinline preload="auto" aria-hidden="true"></video>
@@ -55,9 +73,14 @@
           <p class="title">oh, to be young and free</p>
           <p class="hint">hover and explore</p>
         </div>
+        <span class="scroll-cue" aria-hidden="true">↓</span>
       </section>
 
       <section class="piece" data-scene="scratch">
+        <button class="sound" type="button" data-scene="scratch" data-tip="sound on" aria-label="sound on" aria-pressed="true">
+          <svg class="icon-on" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sound-on"/></svg>
+          <svg class="icon-off" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sound-off"/></svg>
+        </button>
         <button class="replay" type="button" data-tip="replay" aria-label="replay">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M10 18H18V20H8V17H10V18ZM20 18H18V10H20V18ZM10 14H8V12H6V10H4V8H6V6H8V4H10V8H18V10H10V14Z" fill="currentColor"/>
@@ -82,9 +105,14 @@
           </p>
           <p class="hint">scratch this</p>
         </div>
+        <span class="scroll-cue" aria-hidden="true">↓</span>
       </section>
 
       <section class="piece" data-scene="fire">
+        <button class="sound" type="button" data-scene="fire" data-tip="sound on" aria-label="sound on" aria-pressed="true">
+          <svg class="icon-on" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sound-on"/></svg>
+          <svg class="icon-off" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sound-off"/></svg>
+        </button>
         <div class="stage">
           <canvas class="layer fg"></canvas>
         </div>
@@ -94,6 +122,10 @@
         </div>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <p class="content-column"><span aria-hidden="true">&#10084;</span> beautiful, slow things exist.</p>
+    </footer>
 
     <script type="module" src="/src/main.js"></script>
   </body>
