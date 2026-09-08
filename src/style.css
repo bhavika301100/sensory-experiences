@@ -140,16 +140,26 @@ body {
   position: relative;
   z-index: 3;
   display: flex;
-  min-height: 144px;
+  height: 100vh;
+  height: 100svh;
+  min-height: 480px;
+  flex-direction: column;
   align-items: center;
   color: rgba(var(--ink), 0.62);
   font-size: 12px;
   font-weight: 300;
   letter-spacing: 0.04em;
-  scroll-snap-align: end;
+  overflow: hidden;
+  scroll-snap-align: start;
 }
 
 .site-footer .content-column {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 144px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
@@ -157,6 +167,102 @@ body {
   display: inline-block;
   margin-right: var(--space-2);
   color: rgba(var(--ink), 0.74);
+}
+
+/* The last screen stays on the same paper as the rest of the site. Only the
+   characters are drawn; there is intentionally no rectangular scene behind
+   them, so the garden appears to come directly out of the page edge. */
+.flower-stage {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  transform-origin: center bottom;
+  margin-top: -1px;
+}
+
+/* Overlap the paper with the first few pixels of the scene. This hides the
+   compositing seam where the masked, blurred video layer begins. */
+.flower-stage::before {
+  content: '';
+  position: absolute;
+  inset: -1px 0 auto;
+  z-index: 4;
+  height: 56px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--paper)) 0%,
+    rgba(var(--paper), 0.97) 18%,
+    rgba(var(--paper), 0.48) 60%,
+    rgba(var(--paper), 0) 100%
+  );
+}
+
+.flower-video {
+  position: absolute;
+  inset: -5% -2% -3%;
+  display: block;
+  width: 104%;
+  height: 108%;
+  object-fit: cover;
+  object-position: center 52%;
+  pointer-events: none;
+  opacity: 0.9;
+  filter: saturate(0.78) contrast(0.94) brightness(1.04);
+  mix-blend-mode: multiply;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.08) 7%,
+    rgba(0, 0, 0, 0.48) 22%,
+    #000 45%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.08) 7%,
+    rgba(0, 0, 0, 0.48) 22%,
+    #000 45%,
+    #000 100%
+  );
+}
+
+/* A narrow blurred veil removes the photographic horizon and lets the upper
+   flowers arrive through the paper. Below it the foliage stays detailed and
+   dense, exactly where the garden meets the bottom edge. */
+.flower-haze {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  height: 38%;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--paper), 0.96) 0%,
+    rgba(var(--paper), 0.66) 32%,
+    rgba(var(--paper), 0.18) 72%,
+    rgba(var(--paper), 0) 100%
+  );
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.72) 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.72) 62%, transparent 100%);
+}
+
+.flower-dissolve {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  image-rendering: pixelated;
 }
 
 /* one grain field over paper and pieces alike, so it all reads as one surface */
@@ -514,6 +620,10 @@ video.source {
   .site-intro p {
     margin-inline: 0;
   }
+
+  .site-footer .content-column {
+    justify-content: flex-start;
+  }
 }
 
 /* Narrow viewports: there isn't room for label + button + label on one line.
@@ -571,8 +681,12 @@ video.source {
   }
 
   .site-footer {
-    min-height: 144px;
+    min-height: 420px;
     font-size: 12px;
+  }
+
+  .site-footer .content-column {
+    flex-basis: 120px;
   }
 }
 

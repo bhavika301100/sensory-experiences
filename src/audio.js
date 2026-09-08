@@ -12,7 +12,9 @@ const REVEAL_GAIN = 0.25; // your reveal clip, at about a third of its original 
 const WIND_GAIN = 0.13; // peak of the gust when sweeping hard
 const FIRE_GAIN = 0.75; // the crackling bed
 const WIND_BED_GAIN = 0.02578125; // the calm wind that's just always there — barely perceptible
-const SCENES = ['pond', 'halftone', 'scratch', 'fire'];
+// Flowers deliberately has no source connected to its bus. Giving the quiet
+// finale a scene of its own still closes the previous piece's audio cleanly.
+const SCENES = ['pond', 'halftone', 'scratch', 'fire', 'flowers'];
 
 let ctx = null;
 let master = null;

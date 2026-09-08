@@ -123,8 +123,13 @@
       </section>
     </main>
 
-    <footer class="site-footer">
+    <footer class="site-footer piece" data-scene="flowers">
       <p class="content-column"><span aria-hidden="true">&#10084;</span> beautiful, slow things exist.</p>
+      <div class="flower-stage" aria-hidden="true">
+        <video class="flower-video" muted loop playsinline preload="auto"></video>
+        <div class="flower-haze"></div>
+        <canvas class="flower-dissolve"></canvas>
+      </div>
     </footer>
 
     <script type="module" src="/src/main.js"></script>

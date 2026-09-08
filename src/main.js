@@ -4,6 +4,7 @@ import { createPond } from './pond.js';
 import { createHalftone } from './halftone.js';
 import { createScratch } from './scratch.js';
 import { createFire } from './fire.js';
+import { createFlowers } from './flowers.js';
 import {
   prepare,
   unlock,
@@ -16,7 +17,13 @@ import {
 
 const sections = [...document.querySelectorAll('.piece')];
 
-const BUILDERS = { pond: createPond, halftone: createHalftone, scratch: createScratch, fire: createFire };
+const BUILDERS = {
+  pond: createPond,
+  halftone: createHalftone,
+  scratch: createScratch,
+  fire: createFire,
+  flowers: createFlowers,
+};
 
 const pieces = sections.map((section) => {
   const kind = section.dataset.scene;
@@ -166,6 +173,7 @@ async function init() {
       halftone: pieces[1].piece.debug,
       scratch: pieces[2].piece.debug,
       fire: pieces[3].piece.debug,
+      flowers: pieces[4].piece.debug,
       audioState,
       setScene,
       sections,
