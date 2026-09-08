@@ -68,7 +68,7 @@ body {
   position: relative;
   z-index: 3;
   padding-block: var(--space-24) var(--space-6);
-  text-align: center;
+  text-align: left;
   scroll-snap-align: start;
 }
 
@@ -100,7 +100,7 @@ body {
 
 .site-intro h1 {
   max-width: 20ch;
-  margin-inline: auto;
+  margin-inline: 0;
   animation: text-dissolve 3.2s cubic-bezier(0.4, 0, 0.2, 1) both;
   color: rgba(var(--ink), 0.9);
   font-size: 32px;
@@ -111,7 +111,7 @@ body {
 
 .site-intro p {
   max-width: 64ch;
-  margin: var(--space-2) auto 0;
+  margin: var(--space-2) 0 0;
   animation: text-dissolve 3.6s 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
   color: rgba(var(--ink), 0.56);
   font-size: 12px;
